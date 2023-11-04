@@ -13,6 +13,8 @@ import io.appwrite.Query;
 import io.appwrite.coroutines.CoroutineCallback;
 import io.appwrite.exceptions.AppwriteException;
 import io.appwrite.models.DocumentList;
+import io.appwrite.models.User;
+import io.appwrite.models.Session;
 import io.appwrite.services.Account;
 import io.appwrite.services.Databases;
 
@@ -36,50 +38,25 @@ public class Appwrite {
         databases = new Databases(client);
     }
 
-    public static void onGetAccount(Context context) {
+    public static void onGetAccount(CoroutineCallback<User> coroutineCallback) {
         try {
             /* Account.get is used to get the currently logged in user. */
-            account.get(new CoroutineCallback<>((result, error) -> {
-
-                Intent intent;
-
-                if (error != null) {  /* User isn't logged in. */
-                    intent = new Intent(context, LoginActivity.class);
-                } else {              /* User is logged in.    */
-                    intent = new Intent(context, HomeActivity.class);
-
-                    /* This will pass the account name to HomeActivity */
-                    intent.putExtra("name", result.getName());
-                }
-
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
-                ((Activity) context).finish();
-            }));
+            account.get(coroutineCallback);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static void onLogin(Context context, String email, String password) {
+    public static void onLogin(String email, String password, CoroutineCallback<Session> coroutineCallback) {
         /* Allow the user to login into their account by providing a valid email and password combination. */
         account.createEmailSession(
                 email,
                 password,
-                new CoroutineCallback<>((result, error) -> {
-                    if (error != null) {
-                        /* Login unsuccessful */
-                        error.printStackTrace();
-                        return;
-                    }
-
-                    /* Get current user and redirect to HomeActivity */
-                    onGetAccount(context);
-                })
+                coroutineCallback
         );
     }
 
-    public static void onCreateAccount(Context context, String email, String password, String name) {
+    public static void onCreateAccount(String email, String password, String name, CoroutineCallback<User> coroutineCallback) {
         try {
             /* Allow a new user to register a new account */
             account.create(
@@ -87,39 +64,18 @@ public class Appwrite {
                     email,
                     password,
                     name,
-                    new CoroutineCallback<>((result, error) -> {
-                        if (error != null) {
-                            /* Create account unsuccessful */
-                            error.printStackTrace();
-                            return;
-                        }
-
-                        /* Log the new user in, and redirect to HomeActivity */
-                        onLogin(context, email, password);
-                    })
+                    coroutineCallback
             );
         } catch (AppwriteException e) {
             e.printStackTrace();
         }
     }
 
-    public static void onLogout(Context context) {
+    public static void onLogout(CoroutineCallback<Object> coroutineCallback) {
         /* Logout the user. Use 'current' as the session ID to logout on this device, use a session ID to logout on another device. */
         account.deleteSession(
                 "current",
-                new CoroutineCallback<>((result, error) -> {
-                    if (error != null) {
-                        /* Logout unsuccessful */
-                        error.printStackTrace();
-                        return;
-                    }
-
-                    /* Redirect to LoginActivity if logout successful */
-                    Intent intent = new Intent(context, LoginActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
-                    ((Activity) context).finish();
-                })
+                coroutineCallback
         );
     }
 

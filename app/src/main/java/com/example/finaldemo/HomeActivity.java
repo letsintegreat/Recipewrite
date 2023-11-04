@@ -3,6 +3,8 @@ package com.example.finaldemo;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -145,7 +147,19 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         int id = item.getItemId();
 
         if (id == R.id.action_logout) {
-            Appwrite.onLogout(this);
+            Appwrite.onLogout(new CoroutineCallback<>((result, error) -> {
+                if (error != null) {
+                    /* Logout unsuccessful */
+                    error.printStackTrace();
+                    return;
+                }
+
+                /* Redirect to LoginActivity if logout successful */
+                Intent intent = new Intent(this, AuthActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                this.finish();
+            }));
         } else if (id == R.id.action_search) {
 
             /* Declare an AlertDialog to capture search query from user */
